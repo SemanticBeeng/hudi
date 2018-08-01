@@ -17,7 +17,7 @@
 package com.uber.hoodie.cli.commands;
 
 import com.beust.jcommander.internal.Maps;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.codehaus.jackson.map.ObjectMapper;
 import com.uber.hoodie.cli.HoodieCLI;
 import com.uber.hoodie.cli.HoodiePrintHelper;
 import com.uber.hoodie.cli.TableHeader;
@@ -52,7 +52,7 @@ import org.springframework.shell.core.annotation.CliAvailabilityIndicator;
 import org.springframework.shell.core.annotation.CliCommand;
 import org.springframework.shell.core.annotation.CliOption;
 import org.springframework.stereotype.Component;
-import parquet.avro.AvroSchemaConverter;
+import org.apache.parquet.avro.AvroSchemaConverter;
 import scala.Tuple2;
 import scala.Tuple3;
 
