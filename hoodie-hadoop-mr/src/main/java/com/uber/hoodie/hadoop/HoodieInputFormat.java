@@ -16,9 +16,9 @@
 
 package com.uber.hoodie.hadoop;
 
-import static parquet.filter2.predicate.FilterApi.and;
-import static parquet.filter2.predicate.FilterApi.binaryColumn;
-import static parquet.filter2.predicate.FilterApi.gt;
+//import static parquet.filter2.predicate.FilterApi.and;
+//import static parquet.filter2.predicate.FilterApi.binaryColumn;
+//import static parquet.filter2.predicate.FilterApi.gt;
 
 import com.uber.hoodie.common.model.HoodieDataFile;
 import com.uber.hoodie.common.model.HoodiePartitionMetadata;
@@ -43,26 +43,39 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hive.ql.exec.SerializationUtilities;
 import org.apache.hadoop.hive.ql.exec.Utilities;
 import org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat;
 import org.apache.hadoop.hive.ql.io.parquet.read.ParquetFilterPredicateConverter;
+import org.apache.hadoop.hive.ql.io.sarg.ConvertAstToSearchArg;
 import org.apache.hadoop.hive.ql.io.sarg.SearchArgument;
 import org.apache.hadoop.hive.ql.io.sarg.SearchArgumentFactory;
 import org.apache.hadoop.hive.ql.plan.TableScanDesc;
 import org.apache.hadoop.hive.serde2.ColumnProjectionUtils;
 import org.apache.hadoop.io.ArrayWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Job;
-import parquet.filter2.predicate.FilterPredicate;
-import parquet.filter2.predicate.Operators;
-import parquet.hadoop.ParquetFileReader;
-import parquet.hadoop.metadata.FileMetaData;
-import parquet.hadoop.metadata.ParquetMetadata;
-import parquet.io.api.Binary;
+import org.apache.parquet.filter2.predicate.FilterPredicate;
+import org.apache.parquet.filter2.predicate.Operators;
+import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.hadoop.metadata.FileMetaData;
+import org.apache.parquet.hadoop.metadata.ParquetMetadata;
+import org.apache.parquet.io.api.Binary;
+
+import static org.apache.parquet.filter2.predicate.FilterApi.and;
+import static org.apache.parquet.filter2.predicate.FilterApi.binaryColumn;
+import static org.apache.parquet.filter2.predicate.FilterApi.gt;
+//import parquet.filter2.predicate.FilterPredicate;
+//import parquet.filter2.predicate.Operators;
+//import parquet.hadoop.ParquetFileReader;
+//import parquet.hadoop.metadata.FileMetaData;
+//import parquet.hadoop.metadata.ParquetMetadata;
+//import parquet.io.api.Binary;
 
 /**
  * HoodieInputFormat which understands the Hoodie File Structure and filters files based on the
@@ -202,8 +215,8 @@ public class HoodieInputFormat extends MapredParquetInputFormat implements Confi
   }
 
   @Override
-  public RecordReader<Void, ArrayWritable> getRecordReader(final InputSplit split,
-      final JobConf job, final Reporter reporter) throws IOException {
+  public RecordReader<NullWritable, ArrayWritable> getRecordReader(final InputSplit split,
+                                                                   final JobConf job, final Reporter reporter) throws IOException {
     // TODO enable automatic predicate pushdown after fixing issues
     //        FileSplit fileSplit = (FileSplit) split;
     //        HoodieTableMetadata metadata = getTableMetadata(fileSplit.getPath().getParent());
@@ -257,8 +270,11 @@ public class HoodieInputFormat extends MapredParquetInputFormat implements Confi
         || columnNamesString.isEmpty()) {
       return null;
     } else {
-      SearchArgument sarg = SearchArgumentFactory
-          .create(Utilities.deserializeExpression(serializedPushdown));
+      SearchArgument sarg = ConvertAstToSearchArg.createFromConf(job);
+      // #todo https://github.com/apache/hive/blob/233884620af67e6af72b60629f799a69f5823eb2/ql/src/java/org/apache/hadoop/hive/ql/io/sarg/ConvertAstToSearchArg.java#L544
+      //SearchArgumentFactory.newBuilder().
+      //    .create(Utilities.deserializeExpression(serializedPushdown));
+
       final Path finalPath = ((FileSplit) split).getPath();
       final ParquetMetadata parquetMetadata = ParquetFileReader.readFooter(job, finalPath);
       final FileMetaData fileMetaData = parquetMetadata.getFileMetaData();
